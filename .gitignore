@@ -1,0 +1,10 @@
+# Never commit credentials or runtime state
+*.db
+*.db-*
+data/
+admin-password*
+rclone.conf
+*.log
+log/
+temp/
+.DS_Store

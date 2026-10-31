@@ -1,0 +1,11 @@
+# macOS metadata that should stay local (hidden from the mount).
+# Note: .fseventsd at the volume root is created by macOS and still reaches the remote.
+- .fseventsd/**
+- .Spotlight-V100/**
+- .Trashes/**
+- .TemporaryItems/**
+- .DocumentRevisions-V100/**
+- .DS_Store
+- ._*
+- .metadata_never_index*
+- Icon?
