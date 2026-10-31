@@ -1,6 +1,8 @@
 # 在 macOS Finder 中挂载百度网盘
 
-把百度网盘挂载成 Finder 里的一个文件夹（`~/BaiduNetdisk`），不用开百度网盘 App 就能打开、拖拽上传和下载。全部基于开源组件，走百度**官方开放 API**。
+把百度网盘挂载成 Finder 里的一个文件夹（`~/CloudDrives/BaiduNetdisk`），不用开百度网盘 App 就能打开、拖拽上传和下载。全部基于开源组件，走百度**官方开放 API**。
+
+挂载的是 OpenList 的根目录，每个存储是 `~/CloudDrives` 下的一个子文件夹。这样以后接入阿里云盘、115 等，也会并排出现在这里。另一个好处是：macOS 自动在卷根目录创建的 `.fseventsd`、`.Trashes` 会被 OpenList 的虚拟根目录拒绝写入，不会出现在网盘里。
 
 ```
 Finder ──► fuse-t (FSKit) ──► rclone mount (VFS 缓存) ──WebDAV──► OpenList (127.0.0.1) ──官方 API──► 百度网盘
@@ -74,7 +76,9 @@ scripts/uninstall-launchd.sh   # 取消自启
 | 上传报 405，日志里是 `Client.Timeout exceeded` | 每个分片默认要在 60 秒内传完，境外上行慢就会超时。解决：开低带宽模式（小分片）、8 线程、300 秒超时。 |
 | Finder 读取只有 2–3 MB/s | 单个连接到百度大约 2 MB/s。解决：`--vfs-read-chunk-streams 16 --vfs-read-chunk-size 8M`。 |
 | 刚卸载就重新挂载失败（`mount stopped before calling Init`） | FSKit 还没释放。等几秒再挂载。 |
-| 网盘根目录出现 `.fseventsd` | macOS 会在每个卷上创建它，排除规则拦不住。只有几个字节，可以忽略。 |
+| 网盘根目录出现 `.fseventsd`、`.Trashes` | macOS 会在每个卷的根目录创建它们，排除规则拦不住。解决：挂载 OpenList 根目录（`REMOTE=openlist:`），它们落在虚拟根目录里，写入会被拒绝（409）。代价是 rclone 日志里会按退避间隔周期性出现一条 `.fseventsd` 的上传错误，可以忽略。 |
+| 在 Finder 里删除挂载盘上的文件 | 不会留在 `.Trashes` 里，而是直接删除（进入百度回收站）。 |
+| `install-launchd.sh` 报 `Bootstrap failed: 5` | `launchctl bootout` 返回时旧任务还没完全退出，马上 bootstrap 就会失败。脚本现在会先等旧任务退出。 |
 | 0 字节文件上传 405 | OpenList 百度驱动不支持空文件，空文件只会留在本地。 |
 | 沙盒里的终端或程序复制带 `com.apple.quarantine` 的文件失败 | 和沙盒环境有关，Finder 拖拽正常。 |
 | Homebrew 版 rclone 没有 `mount` | 用 rclone 官网的二进制版本（`setup-rclone.sh` 会自动下载）。 |

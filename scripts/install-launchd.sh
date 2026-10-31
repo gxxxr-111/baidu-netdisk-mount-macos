@@ -15,6 +15,11 @@ for name in org.oplist.openlist local.baidunetdisk.mount; do
   sed -e "s|__HOME__|$HOME|g" -e "s|__OPENLIST_BIN__|$OPENLIST_BIN|g" \
     "$REPO/launchd/$name.plist.template" > "$AGENTS/$name.plist"
   launchctl bootout "gui/$(id -u)/$name" 2>/dev/null || true
+  # bootout returns before the old job is gone; bootstrapping too early fails with error 5.
+  for _ in {1..20}; do
+    launchctl print "gui/$(id -u)/$name" >/dev/null 2>&1 || break
+    sleep 0.5
+  done
   launchctl bootstrap "gui/$(id -u)" "$AGENTS/$name.plist"
   echo "loaded $name"
 done
